@@ -1,7 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Next, Pause, Play, Prev } from "~/icons/musicPlayer";
 import { Slider } from "./ui/slider";
-import { VolumeOff } from "~/icons/VolumeIcons";
+import {
+  VolumeHigh,
+  VolumeLow,
+  VolumeMedium,
+  VolumeOff,
+} from "~/icons/VolumeIcons";
 import { useMusicPlayer } from "~/lib/store";
 
 const CurrentSong = ({
@@ -37,6 +42,15 @@ const MusicControls = () => {
     updateCurrentSong,
   } = useMusicPlayer();
 
+  const [volume, setVolume] = useState(0);
+
+  const VolumeIcon = useCallback(() => {
+    if (volume === 0) return <VolumeOff />;
+    if (volume < 0.3) return <VolumeLow />;
+    if (volume < 0.7) return <VolumeMedium />;
+    return <VolumeHigh />;
+  }, [volume]);
+
   useEffect(() => {
     if (!audioRef.current) return;
     if (isPlaying) {
@@ -61,14 +75,13 @@ const MusicControls = () => {
     const currentIndex = currentPlaylist?.songs.findIndex(
       (s) => s.id === currentSong?.id
     );
-    console.log("is first song", currentIndex === currentPlaylist?.songs[0]);
     return currentIndex === 0;
   };
+
   const onPrevSong = () => {
     const currentIndex = currentPlaylist?.songs.findIndex(
       (s) => s.id === currentSong?.id
     );
-    console.log("current index", currentIndex, currentPlaylist?.songs);
 
     if (
       currentIndex === undefined ||
@@ -77,7 +90,6 @@ const MusicControls = () => {
     ) {
       return;
     }
-    console.log("HOLA˝");
     const nextSong = currentPlaylist?.songs[currentIndex - 1];
     console.log(nextSong, currentIndex);
 
@@ -99,7 +111,6 @@ const MusicControls = () => {
       !currentPlaylist?.songs
     )
       return;
-    console.log("next song");
 
     const nextSong = currentPlaylist?.songs[currentIndex + 1];
 
@@ -137,16 +148,27 @@ const MusicControls = () => {
       </div>
 
       <div className="flex flex-row items-center justify-center gap-2">
-        <VolumeOff />
-        <Slider defaultValue={[100]} min={0} max={100} className="w-[95px]" />
-      </div>
-      {/* 
-        onValueChange={(value) => {
+        {/* {audioRef?.current && audioRef?.current?.volume < 0.3 ? (
+          <VolumeOff />
+        ) : (
+          <VolumeLow />
+        )} */}
+        <VolumeIcon />
+        <Slider
+          defaultValue={[100]}
+          min={0}
+          max={100}
+          className="w-[95px]"
+          onValueChange={(value) => {
             if (!audioRef.current) return;
             const [newVolume] = value;
+
             audioRef.current.volume = newVolume / 100;
-            }}
-            */}
+            setVolume(newVolume / 100);
+          }}
+        />
+      </div>
+
       <audio
         ref={audioRef}
         src={`/playlist/${currentPlaylist?.id}/0${currentSong?.id}`}
@@ -205,14 +227,6 @@ export default function MusicPlayer() {
       />
 
       <MusicControls />
-
-      {/* 
-            onValueChange={(value) => {
-              if (!audioRef.current) return;
-              const [newVolume] = value;
-              audioRef.current.volume = newVolume / 100;
-            }}
-           */}
     </div>
   );
 }
