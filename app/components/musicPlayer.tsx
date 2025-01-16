@@ -1,8 +1,8 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Next, Pause, Play, Prev } from "~/icons/musicPlayer";
 import { Slider } from "./ui/slider";
 import { VolumeOff } from "~/icons/VolumeIcons";
-import type { Song } from "~/lib/data";
+import { useMusicPlayer } from "~/lib/store";
 
 const CurrentSong = ({
   image,
@@ -14,7 +14,7 @@ const CurrentSong = ({
   artists: string[];
 }) => {
   return (
-    <div className="flex items-center gap-5 relative overflow-hidden">
+    <div className="flex items-center gap-5 relative overflow-hidden w-44">
       <picture className="w-16 h-16 rounded-mg bg-zinc-800 shadow-lg overflow-hidden">
         <img src={image} alt={title} />
       </picture>
@@ -26,45 +26,150 @@ const CurrentSong = ({
   );
 };
 
-const PlayPauseButton = ({ onClick }: { onClick: () => void }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  const handleClick = () => {
-    onClick();
-    setIsPlaying(!isPlaying);
-  };
-
-  console.log("el button");
-  return (
-    <button
-      onClick={handleClick}
-      className="bg-white rounded-full p-2 hover:scale-110"
-    >
-      {isPlaying ? (
-        <Pause className="text-black" />
-      ) : (
-        <Play className="text-black" />
-      )}
-    </button>
-  );
-};
-
-export default function MusicPlayer({ currentSong }: { currentSong?: Song }) {
+const MusicControls = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  console.log("el music player", currentSong);
-  const handleCLick = () => {
-    if (!audioRef.current) return;
-    // audioRef.current.src = `/music/1/01.mp3`;
+  const {
+    isPlaying,
+    setIsPlaying,
+    currentSong,
+    currentPlaylist,
+    updateCurrentSong,
+  } = useMusicPlayer();
 
-    if (audioRef.current.paused) {
+  useEffect(() => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
       audioRef.current.play();
     } else {
       audioRef.current.pause();
     }
-    //setIsPlaying(!isPlaying);
-    //"https://vinyl.lofirecords.com/cdn/shop/products/ VINYL_MORNING_COFFEE_4-min.png?v=1680526353";
+  }, [currentSong, isPlaying]);
+
+  const handleClick = () => {
+    setIsPlaying(!isPlaying);
   };
+
+  const isLastSong = () => {
+    const currentINdex = currentPlaylist?.songs.findIndex(
+      (s) => s.id === currentSong?.id
+    );
+
+    return currentINdex === currentPlaylist?.songs.length! - 1;
+  };
+  const isFirstSong = () => {
+    const currentIndex = currentPlaylist?.songs.findIndex(
+      (s) => s.id === currentSong?.id
+    );
+    console.log("is first song", currentIndex === currentPlaylist?.songs[0]);
+    return currentIndex === 0;
+  };
+  const onPrevSong = () => {
+    const currentIndex = currentPlaylist?.songs.findIndex(
+      (s) => s.id === currentSong?.id
+    );
+    console.log("current index", currentIndex, currentPlaylist?.songs);
+
+    if (
+      currentIndex === undefined ||
+      currentIndex === -1 ||
+      !currentPlaylist?.songs
+    ) {
+      return;
+    }
+    console.log("HOLA˝");
+    const nextSong = currentPlaylist?.songs[currentIndex - 1];
+    console.log(nextSong, currentIndex);
+
+    if (nextSong) {
+      console.log(nextSong);
+      updateCurrentSong(nextSong);
+    }
+  };
+
+  const onNextSong = () => {
+    console.log(currentPlaylist);
+    const currentIndex = currentPlaylist?.songs.findIndex(
+      (s) => s.id === currentSong?.id
+    );
+    console.log(currentIndex);
+    if (
+      currentIndex === undefined ||
+      currentIndex === -1 ||
+      !currentPlaylist?.songs
+    )
+      return;
+    console.log("next song");
+
+    const nextSong = currentPlaylist?.songs[currentIndex + 1];
+
+    if (nextSong) {
+      updateCurrentSong(nextSong);
+    }
+  };
+  return (
+    <>
+      <div className="flex gap-4 items-center justify-center">
+        <button
+          className="hover:scale-110"
+          onClick={onPrevSong}
+          disabled={isFirstSong()}
+        >
+          <Prev />
+        </button>
+        <button
+          onClick={handleClick}
+          className="bg-white rounded-full p-2 hover:scale-110"
+        >
+          {isPlaying ? (
+            <Pause className="text-black" />
+          ) : (
+            <Play className="text-black" />
+          )}
+        </button>
+        <button
+          className="hover:scale-110"
+          onClick={onNextSong}
+          disabled={isLastSong()}
+        >
+          <Next />
+        </button>
+      </div>
+
+      <div className="flex flex-row items-center justify-center gap-2">
+        <VolumeOff />
+        <Slider defaultValue={[100]} min={0} max={100} className="w-[95px]" />
+      </div>
+      {/* 
+        onValueChange={(value) => {
+            if (!audioRef.current) return;
+            const [newVolume] = value;
+            audioRef.current.volume = newVolume / 100;
+            }}
+            */}
+      <audio
+        ref={audioRef}
+        src={`/playlist/${currentPlaylist?.id}/0${currentSong?.id}`}
+      />
+    </>
+  );
+};
+
+export default function MusicPlayer() {
+  const { currentSong } = useMusicPlayer();
+
+  //   const handleCLick = () => {
+  //     if (!audioRef.current) return;
+  //     // audioRef.current.src = `/music/1/01.mp3`;
+
+  //     if (audioRef.current.paused) {
+  //       audioRef.current.play();
+  //     } else {
+  //       audioRef.current.pause();
+  //     }
+  //     //setIsPlaying(!isPlaying);
+  //     //"https://vinyl.lofirecords.com/cdn/shop/products/ VINYL_MORNING_COFFEE_4-min.png?v=1680526353";
+  //   };
 
   // const onPrevSong = () => {
   //   const { song, songs, playlist } = currentMusic;
@@ -93,31 +198,14 @@ export default function MusicPlayer({ currentSong }: { currentSong?: Song }) {
   return (
     // create a spotify player
     <div className="flex flex-row justify-between items-center w-full px-4 z-50 text-white h-full">
-      {/* 
-image={currentMusic.song?.image}
-        title={currentMusic.song?.title}
-        artists={currentMusic.song?.artists || []} */}
-
       <CurrentSong
         image={currentSong?.image}
         title={currentSong?.title}
         artists={currentSong?.artists || []}
       />
 
-      <div className="flex gap-4 items-center justify-center">
-        <button className="hover:scale-110">
-          <Prev />
-        </button>
-        <PlayPauseButton onClick={handleCLick} />
-        <button className="hover:scale-110">
-          <Next />
-        </button>
-      </div>
+      <MusicControls />
 
-      <div className="flex flex-row items-center justify-center gap-2">
-        <VolumeOff />
-        <Slider defaultValue={[100]} min={0} max={100} className="w-[95px]" />
-      </div>
       {/* 
             onValueChange={(value) => {
               if (!audioRef.current) return;
@@ -125,7 +213,6 @@ image={currentMusic.song?.image}
               audioRef.current.volume = newVolume / 100;
             }}
            */}
-      <audio ref={audioRef} src={`/playlist/1/01`} />
     </div>
   );
 }

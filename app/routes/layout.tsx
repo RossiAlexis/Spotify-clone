@@ -9,51 +9,15 @@ import MusicPlayer from "~/components/musicPlayer";
 import type { Route } from "./+types/layout";
 
 export async function loader() {
-  // Params when to search the song in the playlist
-  // let url = new URL(request.url);
-  // let playlistId = url.searchParams.get("playlistId");
-  // let songId = url.searchParams.get("songId");
-  // let playlist: Playlist | undefined = undefined;
-  // let currentSong: Song | undefined = undefined;
-  // if (playlistId && songId) {
-  //   console.log("inside the if");
-  //   playlist = playlists.find((playlist) => playlist.id === playlistId)!;
-  //   currentSong = songs.find(
-  //     (song) => song.albumId === playlist?.albumId && song.id === +songId
-  //   );
-  //   return data({ playlists, currentSong: currentSong, playlist });
-  // }
-  // console.log({ playlists, currentSong: currentSong, playlist });
   return {
     playlists,
   };
 }
 
-export async function action({ request }: Route.ActionArgs) {
-  // playlist and song
-  console.log("layout action");
-  let formData = await request.formData();
-  let playlistId = formData.get("playlistId");
-  let songId = formData.get("songId");
-  let playlist: Playlist | undefined = undefined;
-  let currentSong: Song | undefined = undefined;
-  if (playlistId && songId) {
-    console.log("inside the if");
-    playlist = playlists.find((playlist) => playlist.id === playlistId)!;
-    currentSong = songs.find(
-      (song) => song.albumId === playlist?.albumId && song.id === +songId
-    );
-  }
-  return { playlists, currentSong: currentSong, playlist: playlistId };
-}
-
 export default function HomeLayout({
   loaderData,
-  actionData,
 }: Route.ComponentProps) {
   const { playlists } = loaderData;
-  console.log('actionData',actionData);
-  console.log("layout", loaderData);
   return (
     <div className="flex flex-col relative h-screen p-2 gap-2">
       <div className="flex flex-1 h-[85%] w-full">
@@ -77,7 +41,7 @@ export default function HomeLayout({
                   <LibraryIcon />
                   Your Library
                 </SideMenuItem>
-                {playlists?.map((playlist) => (
+                {playlists.map((playlist) => (
                   <SideMenuCard playlist={playlist} key={playlist.id} />
                 ))}
               </ul>

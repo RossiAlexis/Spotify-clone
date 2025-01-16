@@ -1,13 +1,25 @@
 // import type { Route } from "../+types/home";
 import { useState } from "react";
 import type { Route } from "./+types";
-import type { Route as LayoutRoute } from "./+types/layout";
-import type { Playlist } from "~/lib/data";
+import { playlists, songs, type Playlist, type Song } from "~/lib/data";
 import { Play } from "~/icons/musicPlayer";
 import { NavLink, useFetcher } from "react-router";
+import { useMusicPlayer } from "~/lib/store";
 
-export { loader } from "./layout";
-export { action } from "./layout";
+export async function loader() {
+  //Simulate join in database
+  // Check data structure, Do I really need albumId in songs?
+  const playlistWithSongs = playlists.map((playlists) => {
+    const songsInPlaylist = songs.filter(
+      (song) => song.albumId === playlists.albumId
+    );
+    return { ...playlists, songs: songsInPlaylist };
+  });
+
+  return {
+    playlists: playlistWithSongs,
+  };
+}
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -33,26 +45,34 @@ function Greeting() {
   return <h1 className="text-3xl font-bold">{greeting}</h1>;
 }
 
-function PlayListItemCard({ playlist }: { playlist: Playlist }) {
+function PlayListItemCard({
+  playlist,
+}: {
+  playlist: Playlist & { songs: Song[] };
+}) {
   const { id, cover, title, artists, color } = playlist;
   const artistsString = artists.join(", ");
-  let fetcher = useFetcher();
+
+  const { updateCurrentSong, setCurrentPlaylist } = useMusicPlayer();
+
+  const handlePlay = () => {
+    setCurrentPlaylist(playlist);
+    updateCurrentSong(playlist.songs[0]);
+  };
 
   return (
     <article className="group relative transition-all duration-300  rounded-md  hover:bg-zinc-800 shadow-lg hover:shadow-xl bg-zinc-500/30">
       <div className="absolute right-4 bottom-20 translate-y-4 transition-all duration-500 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 z-10">
         {/* <CardPlayButton client:load id={id} /> */}
-        <fetcher.Form method="POST" action="/layout">
-          <input className="hidden" name="playlistId" defaultValue={id} />
-          <input className="hidden" name="songId" defaultValue={1} />
-          <button
-            type="submit"
-            className="card-play-button rounded-full bg-green-500 p-3"
-          >
-            {/* {isPlayingPlaylist ? <Pause /> : <Play />} */}
-            <Play />
-          </button>
-        </fetcher.Form>
+        {/* <fetcher.Form method="POST" action="/layout"> */}
+        <button
+          onClick={handlePlay}
+          className="card-play-button rounded-full bg-green-500 p-3"
+        >
+          {/* {isPlayingPlaylist ? <Pause /> : <Play />} */}
+          <Play />
+        </button>
+        {/* </fetcher.Form> */}
       </div>
       <NavLink
         to={`/playlist/${id}`}
@@ -86,7 +106,7 @@ function PlayListItemCard({ playlist }: { playlist: Playlist }) {
   );
 }
 
-export default function Home({ loaderData }: LayoutRoute.ComponentProps) {
+export default function Home({ loaderData }: Route.ComponentProps) {
   const playlists = loaderData.playlists;
   return (
     <div
