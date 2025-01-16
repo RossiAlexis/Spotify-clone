@@ -2,7 +2,7 @@
 import { useState } from "react";
 import type { Route } from "./+types";
 import { playlists, songs, type Playlist, type Song } from "~/lib/data";
-import { Play } from "~/icons/musicPlayer";
+import { Pause, Play } from "~/icons/musicPlayer";
 import { NavLink, useFetcher } from "react-router";
 import { useMusicPlayer } from "~/lib/store";
 
@@ -53,9 +53,21 @@ function PlayListItemCard({
   const { id, cover, title, artists, color } = playlist;
   const artistsString = artists.join(", ");
 
-  const { updateCurrentSong, setCurrentPlaylist } = useMusicPlayer();
+  const {
+    updateCurrentSong,
+    setCurrentPlaylist,
+    currentPlaylist,
+    isPlaying,
+    setIsPlaying,
+  } = useMusicPlayer();
+
+  const isPlayingPlaylist = currentPlaylist?.id === playlist.id && isPlaying;
 
   const handlePlay = () => {
+    if (isPlaying) {
+      setIsPlaying(false);
+      return;
+    }
     setCurrentPlaylist(playlist);
     updateCurrentSong(playlist.songs[0]);
   };
@@ -69,8 +81,7 @@ function PlayListItemCard({
           onClick={handlePlay}
           className="card-play-button rounded-full bg-green-500 p-3"
         >
-          {/* {isPlayingPlaylist ? <Pause /> : <Play />} */}
-          <Play />
+          {isPlayingPlaylist ? <Pause /> : <Play />}
         </button>
         {/* </fetcher.Form> */}
       </div>
